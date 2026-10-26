@@ -1,0 +1,6 @@
+.env
+venv/
+.venv/
+__pycache__/
+finguard.db
+finguard_backup.db

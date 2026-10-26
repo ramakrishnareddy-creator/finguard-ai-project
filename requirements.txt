@@ -1,0 +1,9 @@
+# Flask>=3.0,<4.0
+# Flask
+# gunicorn
+# psycopg2-binary
+# python-dotenv
+Flask
+gunicorn
+psycopg2-binary
+python-dotenv
