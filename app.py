@@ -113,45 +113,26 @@ def init_db():
 
 
 def assess(amount, kind, location, hour, frequency):
-    score = 0
-    reasons = []
-
-    # 1. Transaction amount
-    if amount >= 500000:
-        score += 50
-        reasons.append("Very high transaction amount (₹5,00,000 or more)")
-    elif amount >= 100000:
-        score += 40
-        reasons.append("High transaction amount (₹1,00,000 or more)")
-    elif amount >= 50000:
-        score += 30
+    score, reasons = 0, []
+    if amount >= 50000:
+        score += 25
         reasons.append("High transaction amount (₹50,000 or more)")
     elif amount >= 20000:
-        score += 20
+        score += 15
         reasons.append("Transaction amount above ₹20,000")
     elif amount >= 10000:
-        score += 10
-        reasons.append("Transaction amount ₹10,000 or more")
+        score += 8
+        reasons.append("Transaction amount above ₹10,000")
 
-    # 2. Unusual transaction time
     if hour < 5 or hour >= 23:
         score += 15
         reasons.append("Unusual transaction hour (11 PM–5 AM)")
 
-    # 3. Unfamiliar location
-    usual = {
-        "hyderabad",
-        "tirupati",
-        "vijayawada",
-        "chennai",
-        "bengaluru"
-    }
-
+    usual = {"hyderabad", "tirupati", "vijayawada", "chennai", "bengaluru"}
     if location.strip().lower() not in usual:
         score += 20
         reasons.append("Location outside the configured usual-location list")
 
-    # 4. Frequent recent transactions
     if frequency >= 3:
         score += 25
         reasons.append("Frequent recent transactions")
@@ -159,40 +140,13 @@ def assess(amount, kind, location, hour, frequency):
         score += 12
         reasons.append("Several recent transactions")
 
-    # 5. Transaction type
     if kind in {"Cash Withdrawal", "International Transfer"}:
         score += 10
         reasons.append("Higher-attention transaction type")
 
-    # 6. Keep the score between 0 and 100
     score = min(score, 100)
-
-    # 7. Very large transactions must meet the review threshold
-    if amount >= 500000:
-        score = max(score, 60)
-
-    # 8. Determine the risk level
-    if score >= 60:
-        level = "High"
-    elif score >= 30:
-        level = "Medium"
-    else:
-        level = "Low"
-
-    if not reasons:
-        reasons.append("No major rules triggered")
-
-    return score, level, reasons
-def determine_status(amount, level):
-    if amount >= 500000 or level == "High":
-        return "Pending Review"
-
-    elif level == "Medium":
-        return "Pending Review"
-
-    else:
-        return "Cleared"
-    
+    level = "High" if score >= 60 else "Medium" if score >= 30 else "Low"
+    return score, level, reasons or ["No major rules triggered"]
 
 def logged(view):
     @wraps(view)
@@ -381,6 +335,8 @@ def simulator():
 @app.route("/health-check")
 def health_check(): return {"status":"ok","app":"FinGuard AI"}
 
+ # Initialize PostgreSQL tables for both local runs and Render/Gunicorn startup.
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
